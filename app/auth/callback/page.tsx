@@ -9,6 +9,7 @@ export default function AuthCallback() {
 
   useEffect(() => {
     const handleAuthCallback = async () => {
+      // 处理URL中的OAuth回调参数
       const { data, error } = await supabase.auth.getSession();
 
       if (error) {
@@ -18,7 +19,9 @@ export default function AuthCallback() {
       }
 
       if (data.session) {
-        router.push("/dashboard"); // 或其他成功登录后的页面
+        // 清除URL中的tokens
+        window.history.replaceState({}, document.title, window.location.pathname);
+        router.push("/"); // 重定向到主页
       } else {
         router.push("/login");
       }

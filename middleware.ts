@@ -15,6 +15,20 @@ const CACHE_DURATION = 60 * 60 * 1000; // 1小时缓存
  * 注意：如果未配置腾讯云，则中国用户也使用当前部署（不重定向）
  */
 export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // Skip geo routing for auth callbacks and other critical routes that must stay on Vercel
+  const bypassPaths = [
+    "/auth/callback",
+    "/auth/reset-password",
+    "/auth/verify",
+    "/login",
+    "/register",
+  ];
+  if (bypassPaths.some((path) => pathname.startsWith(path))) {
+    return NextResponse.next();
+  }
+
   // 获取真实IP
   const forwarded = request.headers.get("x-forwarded-for");
   const realIp = request.headers.get("x-real-ip");

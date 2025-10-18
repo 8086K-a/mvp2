@@ -23,13 +23,15 @@ interface LoginFormProps {
 export default function LoginForm({ defaultIsSignUp = false }: LoginFormProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [verificationCode, setVerificationCode] = useState("");
   const [isSignUp, setIsSignUp] = useState(defaultIsSignUp);
   const [awaitingVerification, setAwaitingVerification] = useState(false);
+  const [forgotPassword, setForgotPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const { signIn, signUp, signInWithGoogle, verifyOtp } = useSupabaseAuth();
+  const { signIn, signUp, signInWithGoogle, verifyOtp, resetPassword } = useSupabaseAuth();
   const { location } = useGeo();
   const router = useRouter();
 
@@ -39,7 +41,16 @@ export default function LoginForm({ defaultIsSignUp = false }: LoginFormProps) {
     setLoading(true);
 
     try {
-      if (awaitingVerification) {
+      if (forgotPassword) {
+        // 找回密码
+        const { error } = await resetPassword(email);
+        if (error) {
+          setError(error.message);
+        } else {
+          setError("密码重置邮件已发送！请检查邮箱。");
+          setForgotPassword(false);
+        }
+      } else if (awaitingVerification) {
         // 验证邮箱验证码
         const { error } = await verifyOtp(email, verificationCode, "signup");
         if (error) {
@@ -51,6 +62,20 @@ export default function LoginForm({ defaultIsSignUp = false }: LoginFormProps) {
           setIsSignUp(false);
         }
       } else if (isSignUp) {
+        // 检查密码匹配
+        if (password !== confirmPassword) {
+          setError("密码不匹配，请重新输入。");
+          setLoading(false);
+          return;
+        }
+
+        // 检查密码强度
+        if (password.length < 6) {
+          setError("密码至少需要6个字符。");
+          setLoading(false);
+          return;
+        }
+
         // 发送注册邮件
         const { error } = await signUp(email, password);
         if (error) {
@@ -98,14 +123,18 @@ export default function LoginForm({ defaultIsSignUp = false }: LoginFormProps) {
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
         <CardTitle>
-          {awaitingVerification
+          {forgotPassword
+            ? "找回密码"
+            : awaitingVerification
             ? "验证邮箱"
             : isSignUp
             ? "注册账户"
             : "登录账户"}
         </CardTitle>
         <CardDescription>
-          {awaitingVerification
+          {forgotPassword
+            ? "请输入您的邮箱地址，我们将发送密码重置邮件"
+            : awaitingVerification
             ? "请输入发送到邮箱的6位验证码"
             : location?.region === "china"
             ? "中国地区用户"
@@ -126,7 +155,7 @@ export default function LoginForm({ defaultIsSignUp = false }: LoginFormProps) {
             />
           </div>
 
-          {!awaitingVerification && (
+          {!awaitingVerification && !forgotPassword && (
             <div>
               <Label htmlFor="password">密码</Label>
               <Input
@@ -134,6 +163,19 @@ export default function LoginForm({ defaultIsSignUp = false }: LoginFormProps) {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+          )}
+
+          {!awaitingVerification && isSignUp && !forgotPassword && (
+            <div>
+              <Label htmlFor="confirmPassword">确认密码</Label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
                 required
               />
             </div>
@@ -166,6 +208,8 @@ export default function LoginForm({ defaultIsSignUp = false }: LoginFormProps) {
           <Button type="submit" className="w-full" disabled={loading}>
             {loading
               ? "处理中..."
+              : forgotPassword
+              ? "发送重置邮件"
               : awaitingVerification
               ? "验证邮箱"
               : isSignUp
@@ -193,17 +237,46 @@ export default function LoginForm({ defaultIsSignUp = false }: LoginFormProps) {
         </div>
 
         <div className="mt-4 text-center">
-          {!awaitingVerification && (
+          {!awaitingVerification && !forgotPassword && (
+            <>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSignUp(!isSignUp);
+                  setError(null);
+                  setVerificationCode("");
+                  setConfirmPassword("");
+                }}
+                className="text-sm text-blue-600 hover:underline mr-4"
+              >
+                {isSignUp ? "已有账户？点击登录" : "没有账户？点击注册"}
+              </button>
+              {!isSignUp && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setForgotPassword(true);
+                    setError(null);
+                    setPassword("");
+                    setConfirmPassword("");
+                  }}
+                  className="text-sm text-blue-600 hover:underline"
+                >
+                  忘记密码？
+                </button>
+              )}
+            </>
+          )}
+          {forgotPassword && (
             <button
               type="button"
               onClick={() => {
-                setIsSignUp(!isSignUp);
+                setForgotPassword(false);
                 setError(null);
-                setVerificationCode("");
               }}
               className="text-sm text-blue-600 hover:underline"
             >
-              {isSignUp ? "已有账户？点击登录" : "没有账户？点击注册"}
+              返回登录
             </button>
           )}
           {awaitingVerification && (

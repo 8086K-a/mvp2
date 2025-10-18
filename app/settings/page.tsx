@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSupabaseAuth } from "@/components/supabase-auth-provider";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -30,11 +30,15 @@ export default function SettingsPage() {
   const [cvv, setCvv] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  useEffect(() => {
+    if (!session) {
+      router.replace("/login");
+    }
+  }, [session, router]);
+
   if (!session) {
-    router.push("/login");
     return null;
   }
-
   const handleSavePayment = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);

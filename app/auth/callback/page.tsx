@@ -20,7 +20,11 @@ export default function AuthCallback() {
 
       if (data.session) {
         // 清除URL中的tokens
-        window.history.replaceState({}, document.title, window.location.pathname);
+        window.history.replaceState(
+          {},
+          document.title,
+          window.location.pathname
+        );
         router.push("/"); // 重定向到主页
       } else {
         router.push("/login");

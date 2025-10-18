@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useSupabaseAuth } from "@/components/supabase-auth-provider";
 import { useGeo } from "@/components/geo-provider";
 import { Button } from "@/components/ui/button";
@@ -30,6 +31,7 @@ export default function LoginForm({ defaultIsSignUp = false }: LoginFormProps) {
 
   const { signIn, signUp, signInWithGoogle, verifyOtp } = useSupabaseAuth();
   const { location } = useGeo();
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,9 +61,14 @@ export default function LoginForm({ defaultIsSignUp = false }: LoginFormProps) {
         }
       } else {
         // 登录
+        console.log("Attempting login with:", email);
         const { error } = await signIn(email, password);
         if (error) {
+          console.error("Login error:", error);
           setError(error.message);
+        } else {
+          console.log("Login successful, redirecting to home");
+          router.push("/");
         }
       }
     } catch (err) {

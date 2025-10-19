@@ -89,7 +89,8 @@ export default function LoginForm({ defaultIsSignUp = false }: LoginFormProps) {
             setError(error.message);
           }
         } else {
-          setError("注册邮件已发送！请检查邮箱并输入验证码。");
+          // 检查是否是重新发送的情况
+          setError("注册邮件已发送！请检查邮箱并输入验证码。如果您之前已注册但未验证，这是一封重新发送的邮件。");
           setAwaitingVerification(true);
         }
       } else {

@@ -77,34 +77,13 @@ export default function LoginForm({ defaultIsSignUp = false }: LoginFormProps) {
           return;
         }
 
-        // 先检查邮箱是否已被注册
-        try {
-          // 尝试用这个邮箱登录来检查是否存在
-          const { error: checkError } = await signIn(
-            email,
-            "dummy_password_that_will_fail"
-          );
-          if (
-            !checkError ||
-            !checkError.message.includes("Invalid login credentials")
-          ) {
-            // 如果不是"无效凭据"错误，说明邮箱已被注册
-            setError("该邮箱已被注册，请直接登录或使用其他邮箱注册。");
-            setLoading(false);
-            return;
-          }
-        } catch (err) {
-          // 忽略这个检查的错误，继续注册流程
-        }
-
         // 发送注册邮件
         const { error } = await signUp(email, password);
         if (error) {
           // 处理特定的错误信息
-          if (
-            error.message.includes("already registered") ||
-            error.message.includes("User already registered")
-          ) {
+          if (error.message.includes("already registered") ||
+              error.message.includes("User already registered") ||
+              error.message.includes("email address is already registered")) {
             setError("该邮箱已被注册，请直接登录或使用其他邮箱注册。");
           } else {
             setError(error.message);
@@ -137,7 +116,10 @@ export default function LoginForm({ defaultIsSignUp = false }: LoginFormProps) {
     const { error } = await signInWithGoogle();
     if (error) {
       // 只处理配置相关的错误，其他OAuth错误通常不会发生
-      if (error.message.includes("Invalid login credentials") || error.message.includes("OAuth")) {
+      if (
+        error.message.includes("Invalid login credentials") ||
+        error.message.includes("OAuth")
+      ) {
         setError("谷歌登录配置错误，请稍后重试或使用邮箱注册。");
       } else {
         setError(`登录失败：${error.message}`);

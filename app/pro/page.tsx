@@ -56,41 +56,50 @@ export default function PricingPage() {
     setIsProcessing(true);
 
     try {
-      const endpoint =
-        selectedPayment === "stripe"
-          ? "/api/stripe/create-checkout"
-          : "/api/paypal/create-subscription";
+      if (!session.access_token) {
+        throw new Error("认证失败，请重新登录");
+      }
+
+      const endpoint = `/api/payment/${selectedPayment}/create-checkout`;
 
       const response = await fetch(endpoint, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
         body: JSON.stringify({ tier }),
       });
 
       const data = await response.json();
 
+      if (!response.ok) {
+        throw new Error(data?.error || "支付请求失败");
+      }
+
       if (data.url || data.approvalUrl) {
-        // Simulate payment success for demo
+        // 演示环境：仅提示消息，不实际跳转
         toast({
-          title: `${
-            selectedPayment === "stripe" ? "Stripe" : "PayPal"
-          } Checkout`,
-          description: data.message || "Redirecting to payment...",
+          title: `${selectedPayment === "stripe" ? "Stripe" : "PayPal"} Checkout`,
+          description: data.message || "正在跳转到支付页面...",
         });
 
-        // In production, redirect to actual payment URL
-        // window.location.href = data.url || data.approvalUrl
+        // 生产环境请取消注释并使用真实跳转
+        // window.location.href = data.url || data.approvalUrl;
 
         setTimeout(() => {
           router.push("/settings");
         }, 2000);
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to initiate payment. Please try again.",
-        variant: "destructive",
-      });
+      console.error("订阅支付失败:", error);
+        const message =
+          error instanceof Error ? error.message : "支付请求失败，请稍后再试";
+        toast({
+          title: "支付失败",
+          description: message,
+          variant: "destructive",
+        });
     } finally {
       setIsProcessing(false);
     }

@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useSupabaseAuth } from "@/components/supabase-auth-provider";
 import { useGeo } from "@/components/geo-provider";
-import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -26,7 +25,7 @@ export default function PaymentOptions({
 }: PaymentOptionsProps) {
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const { user } = useSupabaseAuth();
+  const { user, session } = useSupabaseAuth();
   const { location } = useGeo();
 
   const handlePayment = async (paymentMethod: string) => {
@@ -39,10 +38,7 @@ export default function PaymentOptions({
     setError(null);
 
     try {
-      // 获取Supabase session token
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      // 使用 useSupabaseAuth 提供的 session，避免客户端不一致问题
       if (!session?.access_token) {
         throw new Error("认证失败，请重新登录");
       }
@@ -70,9 +66,13 @@ export default function PaymentOptions({
         window.location.href = data.url;
       } else if (data.approvalUrl) {
         // PayPal的情况
-        if (data.approvalUrl.startsWith('/settings?demo_paypal_checkout=')) {
+        if (data.approvalUrl.startsWith("/settings?demo_paypal_checkout=")) {
           // Demo mode - show message instead of redirecting
-          alert(`PayPal Demo Mode: ${data.message || 'PayPal subscription simulated'}\n\nEnvironment: ${data.environment}`);
+          alert(
+            `PayPal Demo Mode: ${
+              data.message || "PayPal subscription simulated"
+            }\n\nEnvironment: ${data.environment}`
+          );
           onSuccess?.(paymentMethod, data.subscriptionId);
         } else {
           // Real PayPal URL
@@ -118,8 +118,16 @@ export default function PaymentOptions({
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <div className="flex items-start gap-3">
             <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-blue-600" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              <svg
+                className="h-5 w-5 text-blue-600"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                  clipRule="evenodd"
+                />
               </svg>
             </div>
             <div>
@@ -127,7 +135,9 @@ export default function PaymentOptions({
                 🔧 PayPal Sandbox Testing
               </h4>
               <p className="text-sm text-blue-700 mt-1">
-                PayPal payment is enabled using one-time orders (no subscription plans required). If credentials are not configured, it will use demo mode with simulated payments.
+                PayPal payment is enabled using one-time orders (no subscription
+                plans required). If credentials are not configured, it will use
+                demo mode with simulated payments.
               </p>
             </div>
           </div>

@@ -41,13 +41,11 @@ export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const { geoInfo } = useGeo();
+  const { location } = useGeo();
 
   // 根据地理位置选择Supabase客户端
   const getSupabaseClient = () => {
-    return geoInfo?.regionCategory === "china"
-      ? supabaseChina
-      : supabaseOverseas;
+    return location?.region === "china" ? supabaseChina : supabaseOverseas;
   };
 
   useEffect(() => {
@@ -79,7 +77,7 @@ export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => subscription.unsubscribe();
-  }, [geoInfo]);
+  }, [location]);
 
   const signUp = async (email: string, password: string) => {
     const client = getSupabaseClient();

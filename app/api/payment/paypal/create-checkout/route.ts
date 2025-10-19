@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getGeoInfoFromRequest } from "@/lib/geo-utils";
 import { paypalClient, isPayPalConfigured } from "@/lib/paypal";
-import paypal from '@paypal/checkout-server-sdk';
+import paypal from "@paypal/checkout-server-sdk";
 
 export async function POST(request: NextRequest) {
   try {
@@ -41,12 +41,12 @@ export async function POST(request: NextRequest) {
 
     // Check if PayPal is configured
     if (!isPayPalConfigured()) {
-      console.log('PayPal not configured, using demo mode')
+      console.log("PayPal not configured, using demo mode");
       return NextResponse.json({
         orderId: `PAYPAL-DEMO-${tier.toUpperCase()}-${Date.now()}`,
         approvalUrl: `/settings?demo_paypal_checkout=${tier}`,
         message: "Demo mode - PayPal order simulated",
-        environment: 'demo'
+        environment: "demo",
       });
     }
 
@@ -82,15 +82,15 @@ export async function POST(request: NextRequest) {
         orderId: order.id,
       });
     } catch (paypalError: any) {
-      console.error('PayPal API error:', paypalError);
+      console.error("PayPal API error:", paypalError);
 
       // If PayPal API fails, fall back to demo mode
       return NextResponse.json({
         orderId: `PAYPAL-DEMO-${tier.toUpperCase()}-${Date.now()}`,
         approvalUrl: `/settings?demo_paypal_checkout=${tier}`,
         message: "PayPal API error, using demo mode",
-        environment: 'demo',
-        error: paypalError.message
+        environment: "demo",
+        error: paypalError.message,
       });
     }
   } catch (error) {

@@ -2,12 +2,11 @@ import { AlipaySdk } from "alipay-sdk";
 
 // 支付宝SDK配置
 export const alipaySdk = new AlipaySdk({
-  appId: process.env.ALIPAY_APP_ID || "demo_app_id",
-  privateKey: process.env.ALIPAY_PRIVATE_KEY || "demo_private_key",
-  alipayPublicKey: process.env.ALIPAY_PUBLIC_KEY || "demo_public_key",
+  appId: process.env.ALIPAY_APP_ID!,
+  privateKey: process.env.ALIPAY_PRIVATE_KEY!,
+  alipayPublicKey: process.env.ALIPAY_PUBLIC_KEY!,
   gateway:
-    process.env.ALIPAY_GATEWAY ||
-    "https://openapi-sandbox.dl.alipaydev.com/gateway.do",
+    process.env.ALIPAY_GATEWAY || "https://openapi.alipay.com/gateway.do",
   signType: "RSA2",
   camelcase: true,
 });

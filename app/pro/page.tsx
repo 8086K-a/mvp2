@@ -78,28 +78,24 @@ export default function PricingPage() {
       }
 
       if (data.url || data.approvalUrl) {
-        // 演示环境：仅提示消息，不实际跳转
-        toast({
-          title: `${selectedPayment === "stripe" ? "Stripe" : "PayPal"} Checkout`,
-          description: data.message || "正在跳转到支付页面...",
-        });
+        const redirectUrl: string | undefined = data.url || data.approvalUrl;
 
-        // 生产环境请取消注释并使用真实跳转
-        // window.location.href = data.url || data.approvalUrl;
+        if (redirectUrl?.startsWith("http")) {
+          window.location.href = redirectUrl;
+          return;
+        }
 
-        setTimeout(() => {
-          router.push("/settings");
-        }, 2000);
+        throw new Error("Invalid payment redirect URL");
       }
     } catch (error) {
       console.error("订阅支付失败:", error);
-        const message =
-          error instanceof Error ? error.message : "支付请求失败，请稍后再试";
-        toast({
-          title: "支付失败",
-          description: message,
-          variant: "destructive",
-        });
+      const message =
+        error instanceof Error ? error.message : "支付请求失败，请稍后再试";
+      toast({
+        title: "支付失败",
+        description: message,
+        variant: "destructive",
+      });
     } finally {
       setIsProcessing(false);
     }

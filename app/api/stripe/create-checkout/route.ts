@@ -38,33 +38,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid tier" }, { status: 400 });
     }
 
-    // For demo purposes, return a mock checkout URL
-    // In production, create actual Stripe Checkout Session:
-    /*
+    // Create Stripe Checkout Session
     const checkoutSession = await stripe.checkout.sessions.create({
       customer_email: user.email,
       line_items: [
         {
-          price: STRIPE_PLANS[tier].priceId,
+          price: STRIPE_PLANS[tier as keyof typeof STRIPE_PLANS].priceId,
           quantity: 1,
         },
       ],
-      mode: 'subscription',
+      mode: "subscription",
       success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/settings?success=true`,
       cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/settings?canceled=true`,
       metadata: {
         userId: user.id,
         tier: tier,
       },
-    })
-    return NextResponse.json({ url: checkoutSession.url })
-    */
-
-    // Mock response for demo
-    return NextResponse.json({
-      url: `/settings?demo_stripe_checkout=${tier}`,
-      message: "Demo mode - Stripe checkout simulated",
     });
+
+    return NextResponse.json({ url: checkoutSession.url });
   } catch (error) {
     console.error("Stripe checkout error:", error);
     return NextResponse.json(

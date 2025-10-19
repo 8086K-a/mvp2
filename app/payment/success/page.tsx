@@ -29,13 +29,27 @@ function PaymentSuccessContent() {
       const tier = searchParams.get("tier") || "pro"; // Default to pro if not specified
 
       if (sessionId || orderId) {
-        // Stripe 或其他支付方式
-        setTimeout(() => {
+        // Stripe payment
+        try {
+          const response = await fetch("/api/payment/stripe/update-subscription", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ sessionId: sessionId || orderId, tier }),
+          });
+
+          if (response.ok) {
+            setVerifying(false);
+            setVerified(true);
+          } else {
+            throw new Error("Stripe subscription update failed");
+          }
+        } catch (error) {
+          console.error("Stripe verification error:", error);
           setVerifying(false);
-          setVerified(true);
-          // Update subscription status
-          updateSubscriptionStatus(tier, sessionId || orderId || "", "stripe");
-        }, 2000);
+          setVerified(false);
+        }
       } else if (paypalToken && payerId) {
         // PayPal 支付验证
         try {
@@ -44,14 +58,13 @@ function PaymentSuccessContent() {
             headers: {
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({ token: paypalToken, payerId }),
+            body: JSON.stringify({ token: paypalToken, payerId, tier }),
           });
 
           if (response.ok) {
             setVerifying(false);
             setVerified(true);
-            // Update subscription status
-            updateSubscriptionStatus(tier, paypalToken, "paypal");
+            // Subscription status is now updated in the API
           } else {
             throw new Error("PayPal payment capture failed");
           }
@@ -63,28 +76,6 @@ function PaymentSuccessContent() {
       } else {
         setVerifying(false);
         setVerified(true);
-      }
-    };
-
-    const updateSubscriptionStatus = async (tier: string, subscriptionId: string, paymentMethod: string) => {
-      try {
-        const response = await fetch("/api/subscription/update", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            subscriptionTier: tier,
-            subscriptionId,
-            paymentMethod,
-          }),
-        });
-
-        if (!response.ok) {
-          console.error("Failed to update subscription status");
-        }
-      } catch (error) {
-        console.error("Error updating subscription status:", error);
       }
     };
 

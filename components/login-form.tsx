@@ -31,7 +31,8 @@ export default function LoginForm({ defaultIsSignUp = false }: LoginFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const { signIn, signUp, signInWithGoogle, verifyOtp, resetPassword } = useSupabaseAuth();
+  const { signIn, signUp, signInWithGoogle, verifyOtp, resetPassword } =
+    useSupabaseAuth();
   const { location } = useGeo();
   const router = useRouter();
 
@@ -76,10 +77,29 @@ export default function LoginForm({ defaultIsSignUp = false }: LoginFormProps) {
           return;
         }
 
+        // 先检查邮箱是否已被注册
+        try {
+          // 尝试用这个邮箱登录来检查是否存在
+          const { error: checkError } = await signIn(email, "dummy_password_that_will_fail");
+          if (!checkError || !checkError.message.includes("Invalid login credentials")) {
+            // 如果不是"无效凭据"错误，说明邮箱已被注册
+            setError("该邮箱已被注册，请直接登录或使用其他邮箱注册。");
+            setLoading(false);
+            return;
+          }
+        } catch (err) {
+          // 忽略这个检查的错误，继续注册流程
+        }
+
         // 发送注册邮件
         const { error } = await signUp(email, password);
         if (error) {
-          setError(error.message);
+          // 处理特定的错误信息
+          if (error.message.includes("already registered") || error.message.includes("User already registered")) {
+            setError("该邮箱已被注册，请直接登录或使用其他邮箱注册。");
+          } else {
+            setError(error.message);
+          }
         } else {
           setError("注册邮件已发送！请检查邮箱并输入验证码。");
           setAwaitingVerification(true);
@@ -107,8 +127,16 @@ export default function LoginForm({ defaultIsSignUp = false }: LoginFormProps) {
     setError(null);
     const { error } = await signInWithGoogle();
     if (error) {
-      setError(error.message);
+      // 处理特定的OAuth错误
+      if (error.message.includes("already registered") || error.message.includes("User already registered")) {
+        setError("该邮箱已被注册。请使用邮箱密码登录，或使用其他谷歌账户。");
+      } else if (error.message.includes("Email not confirmed")) {
+        setError("邮箱未验证。请先验证邮箱或使用其他登录方式。");
+      } else {
+        setError(`谷歌登录失败：${error.message}`);
+      }
     }
+    // 成功时会自动跳转，由auth state change处理
   };
 
   // 根据地理位置显示不同的登录选项
@@ -220,13 +248,18 @@ export default function LoginForm({ defaultIsSignUp = false }: LoginFormProps) {
 
         <div className="mt-4 space-y-2">
           {showGoogleLogin && (
-            <Button
-              onClick={handleGoogleSignIn}
-              variant="outline"
-              className="w-full"
-            >
-              使用 Google 登录
-            </Button>
+            <div>
+              <Button
+                onClick={handleGoogleSignIn}
+                variant="outline"
+                className="w-full"
+              >
+                使用 Google 登录
+              </Button>
+              <p className="text-xs text-gray-500 mt-1 text-center">
+                如果您已用邮箱注册，谷歌登录将自动关联账户
+              </p>
+            </div>
           )}
 
           {showWeChatLogin && (

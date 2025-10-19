@@ -79,9 +79,9 @@ export default function LoginForm({ defaultIsSignUp = false }: LoginFormProps) {
 
         // 先检查邮箱是否已存在
         try {
-          const checkResponse = await fetch('/api/check-email', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+          const checkResponse = await fetch("/api/check-email", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ email }),
           });
           const checkData = await checkResponse.json();

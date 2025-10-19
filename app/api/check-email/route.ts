@@ -1,4 +1,4 @@
-import { getPrismaClient } from "@/lib/database";
+import { getSupabaseClient } from "@/lib/supabase";
 import { getGeoInfoFromRequest } from "@/lib/geo-utils";
 import { z } from "zod";
 
@@ -11,15 +11,28 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { email } = CheckEmailSchema.parse(body);
 
-    // 获取地理信息和数据库客户端
+    // 获取地理信息
     const geoInfo = await getGeoInfoFromRequest(request);
-    const prisma = getPrismaClient(geoInfo.regionCategory);
+    const supabase = getSupabaseClient(geoInfo.regionCategory);
 
-    const existing = await prisma.user.findUnique({ where: { email } });
-    if (existing) {
+    // 使用 resetPasswordForEmail 来检测用户是否存在
+    // 如果用户不存在，Supabase 会返回错误
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: "http://localhost:3000", // 不会实际使用
+    });
+
+    if (error) {
+      // 如果是 "User not found" 或类似错误，说明用户不存在
+      if (error.message.includes("User not found") ||
+          error.message.includes("user_not_found") ||
+          error.message.includes("Email not confirmed") === false) {
+        return new Response(JSON.stringify({ exists: false }), { status: 200 });
+      }
+      // 其他错误可能是用户存在但有问题，我们假设存在
       return new Response(JSON.stringify({ exists: true }), { status: 200 });
     } else {
-      return new Response(JSON.stringify({ exists: false }), { status: 200 });
+      // 没有错误，说明用户存在
+      return new Response(JSON.stringify({ exists: true }), { status: 200 });
     }
   } catch (err: any) {
     const message = err?.message ?? "Invalid request";

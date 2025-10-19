@@ -77,20 +77,21 @@ export default function LoginForm({ defaultIsSignUp = false }: LoginFormProps) {
           return;
         }
 
+        // 先检查邮箱是否已被注册且验证
+        const { error: signInError } = await signIn(email, "dummy_password_to_check");
+        if (!signInError || !signInError.message.includes("Invalid login credentials")) {
+          // 如果登录没有返回"无效凭据"错误，说明邮箱已被注册且验证
+          setError("该邮箱已被注册，请直接登录或使用其他邮箱注册。");
+          setLoading(false);
+          return;
+        }
+
         // 发送注册邮件
         const { error } = await signUp(email, password);
         if (error) {
-          // 处理特定的错误信息
-          if (error.message.includes("already registered") ||
-              error.message.includes("User already registered") ||
-              error.message.includes("email address is already registered")) {
-            setError("该邮箱已被注册，请直接登录或使用其他邮箱注册。");
-          } else {
-            setError(error.message);
-          }
+          setError(error.message);
         } else {
-          // 检查是否是重新发送的情况
-          setError("注册邮件已发送！请检查邮箱并输入验证码。如果您之前已注册但未验证，这是一封重新发送的邮件。");
+          setError("注册邮件已发送！请检查邮箱并输入验证码。");
           setAwaitingVerification(true);
         }
       } else {

@@ -80,8 +80,14 @@ export default function LoginForm({ defaultIsSignUp = false }: LoginFormProps) {
         // 先检查邮箱是否已被注册
         try {
           // 尝试用这个邮箱登录来检查是否存在
-          const { error: checkError } = await signIn(email, "dummy_password_that_will_fail");
-          if (!checkError || !checkError.message.includes("Invalid login credentials")) {
+          const { error: checkError } = await signIn(
+            email,
+            "dummy_password_that_will_fail"
+          );
+          if (
+            !checkError ||
+            !checkError.message.includes("Invalid login credentials")
+          ) {
             // 如果不是"无效凭据"错误，说明邮箱已被注册
             setError("该邮箱已被注册，请直接登录或使用其他邮箱注册。");
             setLoading(false);
@@ -95,7 +101,10 @@ export default function LoginForm({ defaultIsSignUp = false }: LoginFormProps) {
         const { error } = await signUp(email, password);
         if (error) {
           // 处理特定的错误信息
-          if (error.message.includes("already registered") || error.message.includes("User already registered")) {
+          if (
+            error.message.includes("already registered") ||
+            error.message.includes("User already registered")
+          ) {
             setError("该邮箱已被注册，请直接登录或使用其他邮箱注册。");
           } else {
             setError(error.message);
@@ -127,13 +136,11 @@ export default function LoginForm({ defaultIsSignUp = false }: LoginFormProps) {
     setError(null);
     const { error } = await signInWithGoogle();
     if (error) {
-      // 处理特定的OAuth错误
-      if (error.message.includes("already registered") || error.message.includes("User already registered")) {
-        setError("该邮箱已被注册。请使用邮箱密码登录，或使用其他谷歌账户。");
-      } else if (error.message.includes("Email not confirmed")) {
-        setError("邮箱未验证。请先验证邮箱或使用其他登录方式。");
+      // 只处理配置相关的错误，其他OAuth错误通常不会发生
+      if (error.message.includes("Invalid login credentials") || error.message.includes("OAuth")) {
+        setError("谷歌登录配置错误，请稍后重试或使用邮箱注册。");
       } else {
-        setError(`谷歌登录失败：${error.message}`);
+        setError(`登录失败：${error.message}`);
       }
     }
     // 成功时会自动跳转，由auth state change处理
@@ -257,7 +264,7 @@ export default function LoginForm({ defaultIsSignUp = false }: LoginFormProps) {
                 使用 Google 登录
               </Button>
               <p className="text-xs text-gray-500 mt-1 text-center">
-                如果您已用邮箱注册，谷歌登录将自动关联账户
+                首次使用谷歌登录将自动创建账户，无需验证
               </p>
             </div>
           )}

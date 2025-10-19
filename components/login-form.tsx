@@ -77,23 +77,17 @@ export default function LoginForm({ defaultIsSignUp = false }: LoginFormProps) {
           return;
         }
 
-        // 先检查邮箱是否已被注册（通过重置密码功能）
-        const { error: resetError } = await resetPassword(email);
-        if (resetError && resetError.message.includes("User not found")) {
-          // 邮箱不存在，可以注册
-        } else if (!resetError) {
-          // 邮箱存在，重置邮件已发送，说明邮箱已被注册
-          setError("该邮箱已被注册，请直接登录或使用其他邮箱注册。");
-          setLoading(false);
-          return;
-        } else {
-          // 其他错误，可能是网络问题，继续注册流程
-        }
-
-        // 发送注册邮件
+        // 直接尝试注册，Supabase会处理重复注册的情况
         const { error } = await signUp(email, password);
         if (error) {
-          setError(error.message);
+          // 检查是否是邮箱已被注册的错误
+          if (error.message.includes("already registered") ||
+              error.message.includes("User already registered") ||
+              error.message.includes("email address is already registered")) {
+            setError("该邮箱已被注册，请直接登录或使用其他邮箱注册。");
+          } else {
+            setError(error.message);
+          }
         } else {
           setError("注册邮件已发送！请检查邮箱并输入验证码。");
           setAwaitingVerification(true);

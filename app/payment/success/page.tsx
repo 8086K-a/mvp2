@@ -97,10 +97,10 @@ function PaymentSuccessContent() {
 
           <div className="space-y-2">
             <Button
-              onClick={() => router.push("/dashboard")}
+              onClick={() => router.push("/")}
               className="w-full"
             >
-              返回控制台
+              返回首页
             </Button>
             <Button
               onClick={() => router.push("/settings")}

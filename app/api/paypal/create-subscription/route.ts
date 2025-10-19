@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { getSupabaseClient } from "@/lib/supabase";
 import { getGeoInfoFromRequest } from "@/lib/geo-utils";
 import { PAYPAL_PLANS, paypalClient, isPayPalConfigured, getPayPalEnvironment } from "@/lib/paypal";
 import paypal from '@paypal/checkout-server-sdk';
@@ -8,14 +8,7 @@ export async function POST(request: NextRequest) {
   try {
     // 获取地理信息和Supabase客户端
     const geoInfo = await getGeoInfoFromRequest(request);
-    const supabase = createClient(
-      geoInfo.regionCategory === "china"
-        ? process.env.CLOUDBASE_SUPABASE_URL!
-        : process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      geoInfo.regionCategory === "china"
-        ? process.env.CLOUDBASE_SUPABASE_ANON_KEY!
-        : process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
+    const supabase = getSupabaseClient(geoInfo.regionCategory);
 
     // 获取用户session
     const authHeader = request.headers.get("authorization");

@@ -77,13 +77,17 @@ export default function LoginForm({ defaultIsSignUp = false }: LoginFormProps) {
           return;
         }
 
-        // 先检查邮箱是否已被注册且验证
-        const { error: signInError } = await signIn(email, "dummy_password_to_check");
-        if (!signInError || !signInError.message.includes("Invalid login credentials")) {
-          // 如果登录没有返回"无效凭据"错误，说明邮箱已被注册且验证
+        // 先检查邮箱是否已被注册（通过重置密码功能）
+        const { error: resetError } = await resetPassword(email);
+        if (resetError && resetError.message.includes("User not found")) {
+          // 邮箱不存在，可以注册
+        } else if (!resetError) {
+          // 邮箱存在，重置邮件已发送，说明邮箱已被注册
           setError("该邮箱已被注册，请直接登录或使用其他邮箱注册。");
           setLoading(false);
           return;
+        } else {
+          // 其他错误，可能是网络问题，继续注册流程
         }
 
         // 发送注册邮件

@@ -24,14 +24,37 @@ function PaymentSuccessContent() {
     const verifyPayment = async () => {
       const sessionId = searchParams.get("session_id");
       const orderId = searchParams.get("order_id");
+      const paypalToken = searchParams.get("token");
+      const payerId = searchParams.get("PayerID");
 
       if (sessionId || orderId) {
-        // 这里可以添加支付验证逻辑
-        // 例如调用API验证支付状态
+        // Stripe 或其他支付方式
         setTimeout(() => {
           setVerifying(false);
           setVerified(true);
         }, 2000);
+      } else if (paypalToken && payerId) {
+        // PayPal 支付验证
+        try {
+          const response = await fetch("/api/payment/paypal/capture", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ token: paypalToken, payerId }),
+          });
+
+          if (response.ok) {
+            setVerifying(false);
+            setVerified(true);
+          } else {
+            throw new Error("PayPal payment capture failed");
+          }
+        } catch (error) {
+          console.error("PayPal verification error:", error);
+          setVerifying(false);
+          setVerified(false);
+        }
       } else {
         setVerifying(false);
         setVerified(true);

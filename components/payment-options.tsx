@@ -127,7 +127,7 @@ export default function PaymentOptions({
                 🔧 PayPal Sandbox Testing
               </h4>
               <p className="text-sm text-blue-700 mt-1">
-                PayPal payment is enabled. If credentials are not configured, it will use demo mode with simulated payments.
+                PayPal payment is enabled using one-time orders (no subscription plans required). If credentials are not configured, it will use demo mode with simulated payments.
               </p>
             </div>
           </div>

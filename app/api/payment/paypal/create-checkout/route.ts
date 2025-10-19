@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getGeoInfoFromRequest } from "@/lib/geo-utils";
-import paypal from "@paypal/checkout-server-sdk";
-import { paypalClient } from "@/lib/paypal";
+import { paypalClient, isPayPalConfigured } from "@/lib/paypal";
+import paypal from '@paypal/checkout-server-sdk';
 
 export async function POST(request: NextRequest) {
   try {
@@ -39,8 +39,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid tier" }, { status: 400 });
     }
 
+    // Check if PayPal is configured
+    if (!isPayPalConfigured()) {
+      console.log('PayPal not configured, using demo mode')
+      return NextResponse.json({
+        orderId: `PAYPAL-DEMO-${tier.toUpperCase()}-${Date.now()}`,
+        approvalUrl: `/settings?demo_paypal_checkout=${tier}`,
+        message: "Demo mode - PayPal order simulated",
+        environment: 'demo'
+      });
+    }
+
     // Create actual PayPal order
-    const paypalRequest = new paypal.orders.OrdersCreateRequest();
+    const paypalRequest = new (paypal as any).orders.OrdersCreateRequest();
     paypalRequest.requestBody({
       intent: "CAPTURE",
       purchase_units: [
@@ -61,14 +72,27 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    const response = await paypalClient.execute(paypalRequest);
-    const order = response.result;
+    try {
+      const response = await paypalClient.execute(paypalRequest);
+      const order = response.result;
 
-    return NextResponse.json({
-      approvalUrl: order.links?.find((link: any) => link.rel === "approve")
-        ?.href,
-      orderId: order.id,
-    });
+      return NextResponse.json({
+        approvalUrl: order.links?.find((link: any) => link.rel === "approve")
+          ?.href,
+        orderId: order.id,
+      });
+    } catch (paypalError: any) {
+      console.error('PayPal API error:', paypalError);
+
+      // If PayPal API fails, fall back to demo mode
+      return NextResponse.json({
+        orderId: `PAYPAL-DEMO-${tier.toUpperCase()}-${Date.now()}`,
+        approvalUrl: `/settings?demo_paypal_checkout=${tier}`,
+        message: "PayPal API error, using demo mode",
+        environment: 'demo',
+        error: paypalError.message
+      });
+    }
   } catch (error) {
     console.error("PayPal checkout error:", error);
     return NextResponse.json(

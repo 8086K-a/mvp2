@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
         },
       ],
       mode: "subscription",
-      success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/settings?success=true`,
+      success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/payment/success?session_id={CHECKOUT_SESSION_ID}&tier=${tier}`,
       cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/settings?canceled=true`,
       metadata: {
         userId: user.id,

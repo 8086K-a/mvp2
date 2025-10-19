@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
         email_address: user.email,
       },
       application_context: {
-        return_url: `${process.env.NEXT_PUBLIC_SITE_URL}/settings?paypal_success=true&tier=${tier}`,
+        return_url: `${process.env.NEXT_PUBLIC_SITE_URL}/payment/success?tier=${tier}&token={BA_TOKEN}`,
         cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/settings?paypal_canceled=true`,
         user_action: 'SUBSCRIBE_NOW',
         brand_name: 'RandomLife',

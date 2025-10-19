@@ -26,12 +26,15 @@ function PaymentSuccessContent() {
       const orderId = searchParams.get("order_id");
       const paypalToken = searchParams.get("token");
       const payerId = searchParams.get("PayerID");
+      const tier = searchParams.get("tier") || "pro"; // Default to pro if not specified
 
       if (sessionId || orderId) {
         // Stripe 或其他支付方式
         setTimeout(() => {
           setVerifying(false);
           setVerified(true);
+          // Update subscription status
+          updateSubscriptionStatus(tier, sessionId || orderId || "", "stripe");
         }, 2000);
       } else if (paypalToken && payerId) {
         // PayPal 支付验证
@@ -47,6 +50,8 @@ function PaymentSuccessContent() {
           if (response.ok) {
             setVerifying(false);
             setVerified(true);
+            // Update subscription status
+            updateSubscriptionStatus(tier, paypalToken, "paypal");
           } else {
             throw new Error("PayPal payment capture failed");
           }
@@ -58,6 +63,28 @@ function PaymentSuccessContent() {
       } else {
         setVerifying(false);
         setVerified(true);
+      }
+    };
+
+    const updateSubscriptionStatus = async (tier: string, subscriptionId: string, paymentMethod: string) => {
+      try {
+        const response = await fetch("/api/subscription/update", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            subscriptionTier: tier,
+            subscriptionId,
+            paymentMethod,
+          }),
+        });
+
+        if (!response.ok) {
+          console.error("Failed to update subscription status");
+        }
+      } catch (error) {
+        console.error("Error updating subscription status:", error);
       }
     };
 
